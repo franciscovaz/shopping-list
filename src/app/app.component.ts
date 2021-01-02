@@ -5,11 +5,4 @@ import { Component, ElementRef } from '@angular/core';
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
-export class AppComponent {
-  loadedMenu: string = 'recipe';
-
-
-  onNavigate(menu: string) {
-    this.loadedMenu = menu;
-  }
-}
+export class AppComponent {}
