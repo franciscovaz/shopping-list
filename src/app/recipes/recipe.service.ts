@@ -8,7 +8,7 @@ import { Recipe } from "./recipe.model";
 export class RecipeService {
   recipesChanged = new Subject<Recipe[]>();
 
-  private recipes: Recipe[] = [
+  /* private recipes: Recipe[] = [
     new Recipe(
       'A Test Recipe oiiiii',
       'This is a simply test',
@@ -25,7 +25,8 @@ export class RecipeService {
         new Ingredient('Buns', 2),
         new Ingredient('Meat', 1)
       ]),
-  ];
+  ]; */
+  private recipes: Recipe[] = [];
 
   constructor(private slService: ShoppingListService) {}
 
