@@ -22,14 +22,9 @@ export class DataStorageService {
   }
 
   fetchRecipes() {
-    // so executa uma vez, quando faz o fetch, nao fica a escuta
-    // exaustMap permite ter 2 observables, espera que o 1 acabe
-    return this.authService.user.pipe(
-      take(1), exhaustMap(user => {
-        return this.http.get<Recipe[]>('https://shopping-list-angular-58afa-default-rtdb.firebaseio.com/recipes.json', {
-          params: new HttpParams().set('auth', user.token)
-        });
-      }),
+    return this.http.get<Recipe[]>('https://shopping-list-angular-58afa-default-rtdb.firebaseio.com/recipes.json'
+    )
+    .pipe(
       map(recipes => {
         return recipes.map(recipe => {
           return {...recipe, ingredients: recipe.ingredients ? recipe.ingredients : []
