@@ -14,7 +14,7 @@
         <li routerLinkActive="active"><a routerLink="/shopping-list">Shopping List</a></li>
       </ul>
       <ul class="nav navbar-nav navbar-right">
-        <li style="cursor: pointer;" *ngIf="isAuthenticated">
+        <li style="cursor: pointer;" *ngIf="isAuthenticated" (click)="onLogout()">
           <a>Logout</a>
         </li>
         <li class="dropdown" appDropdown *ngIf="isAuthenticated">
