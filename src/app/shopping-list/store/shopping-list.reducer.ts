@@ -54,6 +54,18 @@ export function shoppingListReduce(state: State = initialState, action: Shopping
           return index !== action.payload;
         })
       }
+    case ShoppingListActions.START_EDIT:
+      return {
+        ...state,
+        editedIngredientIndex: action.payload,
+        editedEngridient: { ...state.ingredients[action.payload] }
+      }
+    case ShoppingListActions.STOP_EDIT:
+      return {
+        ...state,
+        editedIngredient: null,
+        editedIngredientIndex: -1,
+      }
     default:
       return state;
   }
