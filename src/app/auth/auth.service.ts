@@ -20,41 +20,41 @@ export interface AuthResponseData {
   registered?: boolean;
 }
 
-@Injectable({providedIn: 'root'})
+@Injectable({ providedIn: 'root' })
 export class AuthService {
 
   // user = new BehaviorSubject<User>(null);
 
   private tokenExpirationTimer: any;
 
-  constructor(private http: HttpClient, private router: Router, private store: Store<fromAppRoot.AppState>) {}
+  constructor(private http: HttpClient, private router: Router, private store: Store<fromAppRoot.AppState>) { }
 
   signUp(email: string, password: string) {
     return this.http.post<AuthResponseData>('https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=' + environment.firebaseAPIKey,
-    {
-      email,
-      password,
-      returnSecureToken: true
-    }).pipe(
-      catchError(this.handleError),
-      tap( respData => {
-        this.handleAuthentication(respData.email, respData.localId, respData.idToken, +respData.expiresIn);
-      }
+      {
+        email,
+        password,
+        returnSecureToken: true
+      }).pipe(
+        catchError(this.handleError),
+        tap(respData => {
+          this.handleAuthentication(respData.email, respData.localId, respData.idToken, +respData.expiresIn);
+        }
 
-      ));
+        ));
 
   }
 
   login(email: string, password: string) {
     return this.http.post<AuthResponseData>('https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=' + environment.firebaseAPIKey,
-    {
-      email,
-      password,
-      returnSecureToken: true
-    }).pipe(catchError(this.handleError),
-    tap(respData => {
-      this.handleAuthentication(respData.email, respData.localId, respData.idToken, +respData.expiresIn);
-    }));
+      {
+        email,
+        password,
+        returnSecureToken: true
+      }).pipe(catchError(this.handleError),
+        tap(respData => {
+          this.handleAuthentication(respData.email, respData.localId, respData.idToken, +respData.expiresIn);
+        }));
   }
 
   autoLogin() {
@@ -65,15 +65,15 @@ export class AuthService {
       _tokenExpirationDate: string;
     } = JSON.parse(localStorage.getItem('userData'));
 
-    if(!userData) {
+    if (!userData) {
       return;
     }
 
     const loadedUser = new User(userData.email, userData.id, userData._token, new Date(userData._tokenExpirationDate));
 
-    if(loadedUser.token) {
+    if (loadedUser.token) {
       // this.user.next(loadedUser);
-      this.store.dispatch(new AuthActions.Login({
+      this.store.dispatch(new AuthActions.AuthenticateSuccess({
         email: loadedUser.email,
         userId: loadedUser.id,
         token: loadedUser.token,
@@ -92,7 +92,7 @@ export class AuthService {
     localStorage.removeItem('userData');
     this.router.navigate(['/auth']);
 
-    if(this.tokenExpirationTimer) {
+    if (this.tokenExpirationTimer) {
       clearTimeout(this.tokenExpirationTimer);
     }
     this.tokenExpirationTimer = null;
@@ -116,7 +116,7 @@ export class AuthService {
     );
 
     // this.user.next(user);
-    this.store.dispatch(new AuthActions.Login({
+    this.store.dispatch(new AuthActions.AuthenticateSuccess({
       email: email,
       userId: userId,
       token: token,
@@ -129,20 +129,20 @@ export class AuthService {
 
   private handleError(errorResp: HttpErrorResponse) {
     let errorMessage = 'An unkown error occurred!';
-        if(!errorResp.error || !errorResp.error.error) {
-          return throwError(errorMessage);
-        }
-        switch(errorResp.error.error.message) {
-          case 'EMAIL_EXISTS':
-            errorMessage = 'Email already used by another account!';
-            break;
-          case 'EMAIL_NOT_FOUND':
-            errorMessage = 'This email does not exist!';
-            break;
-          case 'INVALID_PASSWORD':
-            errorMessage = 'This password is not correct!';
-        }
+    if (!errorResp.error || !errorResp.error.error) {
+      return throwError(errorMessage);
+    }
+    switch (errorResp.error.error.message) {
+      case 'EMAIL_EXISTS':
+        errorMessage = 'Email already used by another account!';
+        break;
+      case 'EMAIL_NOT_FOUND':
+        errorMessage = 'This email does not exist!';
+        break;
+      case 'INVALID_PASSWORD':
+        errorMessage = 'This password is not correct!';
+    }
 
-        return throwError(errorMessage);
+    return throwError(errorMessage);
   }
 }

@@ -22,6 +22,14 @@ export interface AuthResponseData {
 @Injectable()
 export class AuthEffects {
   @Effect()
+  authSignup = this.actions$.pipe(
+    ofType(AuthActions.SIGNUP_START)
+  );
+
+
+
+
+  @Effect()
   authLogin = this.actions$.pipe(
     ofType(AuthActions.LOGIN_START),
     switchMap((authData: AuthActions.LoginStart) => {
@@ -41,7 +49,7 @@ export class AuthEffects {
               new Date().getTime() + +resData.expiresIn * 1000
             );
 
-            return new AuthActions.Login({
+            return new AuthActions.AuthenticateSuccess({
               email: resData.email,
               userId: resData.localId,
               token: resData.idToken,
@@ -52,7 +60,7 @@ export class AuthEffects {
             // temos que dar return de um non error observable para o effect nao morrer
             let errorMessage = 'An unkown error occurred!';
             if (!errorResp.error || !errorResp.error.error) {
-              return of(new AuthActions.LoginFail(errorMessage));
+              return of(new AuthActions.AuthenticateFail(errorMessage));
             }
             switch (errorResp.error.error.message) {
               case 'EMAIL_EXISTS':
@@ -65,7 +73,7 @@ export class AuthEffects {
                 errorMessage = 'This password is not correct!';
             }
 
-            return of(new AuthActions.LoginFail(errorMessage));
+            return of(new AuthActions.AuthenticateFail(errorMessage));
 
             // of() to create a new observable
             // return an empty observable for now
@@ -78,7 +86,7 @@ export class AuthEffects {
   // quando um effect nao faz o dispatch de nova acao, coloca se dispatch: false
   @Effect({ dispatch: false })
   authSuccess = this.actions$.pipe(
-    ofType(AuthActions.LOGIN_SUCCESS),
+    ofType(AuthActions.AUTHENTICATE_SUCCESS),
     tap(() => {
       this.router.navigate(['/']);
     })
