@@ -18,12 +18,63 @@ export interface AuthResponseData {
   registered?: boolean;
 }
 
+const handleAuthentication = (expiresIn: number, email: string, userId: string, token: string) => {
+  const expirationDate = new Date(
+    new Date().getTime() + expiresIn * 1000
+  );
+
+  return new AuthActions.AuthenticateSuccess({
+    email,
+    userId,
+    token,
+    expirationDate
+  });
+};
+
+const handleError = (errorResp: any) => {
+  let errorMessage = 'An unkown error occurred!';
+  if (!errorResp.error || !errorResp.error.error) {
+    return of(new AuthActions.AuthenticateFail(errorMessage));
+  }
+  switch (errorResp.error.error.message) {
+    case 'EMAIL_EXISTS':
+      errorMessage = 'Email already used by another account!';
+      break;
+    case 'EMAIL_NOT_FOUND':
+      errorMessage = 'This email does not exist!';
+      break;
+    case 'INVALID_PASSWORD':
+      errorMessage = 'This password is not correct!';
+  }
+
+  // of() to create a new observable
+  return of(new AuthActions.AuthenticateFail(errorMessage));
+};
+
 // Injectable para podermos fazer o inject das actions e do http!!
 @Injectable()
 export class AuthEffects {
   @Effect()
   authSignup = this.actions$.pipe(
-    ofType(AuthActions.SIGNUP_START)
+    ofType(AuthActions.SIGNUP_START),
+    switchMap((signupAction: AuthActions.SignupStart) => {
+      return this.http.post<AuthResponseData>
+        ('https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=' + environment.firebaseAPIKey,
+          {
+            email: signupAction.payload.email,
+            password: signupAction.payload.password,
+            returnSecureToken: true
+          }).pipe(
+            map(resData => {
+              // aqui tenho um login com sucesso (passou no request), logo vamos fazer o dispatch da login succes action
+              return handleAuthentication(+resData.expiresIn, resData.email, resData.localId, resData.idToken);
+            }),
+            catchError(errorResp => {
+              // temos que dar return de um non error observable para o effect nao morrer
+              return handleError(errorResp);
+            })
+          )
+    })
   );
 
 
@@ -45,39 +96,11 @@ export class AuthEffects {
         ).pipe(
           map(resData => {
             // aqui tenho um login com sucesso (passou no request), logo vamos fazer o dispatch da login succes action
-            const expirationDate = new Date(
-              new Date().getTime() + +resData.expiresIn * 1000
-            );
-
-            return new AuthActions.AuthenticateSuccess({
-              email: resData.email,
-              userId: resData.localId,
-              token: resData.idToken,
-              expirationDate: expirationDate
-            });
+            return handleAuthentication(+resData.expiresIn, resData.email, resData.localId, resData.idToken);
           }),
           catchError(errorResp => {
             // temos que dar return de um non error observable para o effect nao morrer
-            let errorMessage = 'An unkown error occurred!';
-            if (!errorResp.error || !errorResp.error.error) {
-              return of(new AuthActions.AuthenticateFail(errorMessage));
-            }
-            switch (errorResp.error.error.message) {
-              case 'EMAIL_EXISTS':
-                errorMessage = 'Email already used by another account!';
-                break;
-              case 'EMAIL_NOT_FOUND':
-                errorMessage = 'This email does not exist!';
-                break;
-              case 'INVALID_PASSWORD':
-                errorMessage = 'This password is not correct!';
-            }
-
-            return of(new AuthActions.AuthenticateFail(errorMessage));
-
-            // of() to create a new observable
-            // return an empty observable for now
-            return of();
+            return handleError(errorResp);
           })
         )
     })
@@ -85,8 +108,8 @@ export class AuthEffects {
 
   // quando um effect nao faz o dispatch de nova acao, coloca se dispatch: false
   @Effect({ dispatch: false })
-  authSuccess = this.actions$.pipe(
-    ofType(AuthActions.AUTHENTICATE_SUCCESS),
+  authRedirect = this.actions$.pipe(
+    ofType(AuthActions.AUTHENTICATE_SUCCESS, AuthActions.LOGOUT),
     tap(() => {
       this.router.navigate(['/']);
     })
