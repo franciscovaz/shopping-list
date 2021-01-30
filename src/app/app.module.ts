@@ -12,6 +12,9 @@ import * as fromAppRoot from './store/app.reducer';
 import { EffectsModule } from '@ngrx/effects';
 import { AuthEffects } from './auth/store/auth.effects';
 
+import { StoreDevtoolsModule } from '@ngrx/store-devtools';
+import { environment } from '../environments/environment';
+
 @NgModule({
   declarations: [
     AppComponent,
@@ -23,6 +26,7 @@ import { AuthEffects } from './auth/store/auth.effects';
     AppRoutingModule,
     StoreModule.forRoot(fromAppRoot.appReducer),
     EffectsModule.forRoot([AuthEffects]),
+    StoreDevtoolsModule.instrument({ logOnly: environment.production }),
     SharedModule,
     CoreModule
   ],
