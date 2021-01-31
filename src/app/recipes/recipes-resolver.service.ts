@@ -10,7 +10,7 @@ import { map, switchMap, take } from 'rxjs/operators';
 import { of } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
-export class RecipesResolverService implements Resolve<Recipe[]> {
+export class RecipesResolverService implements Resolve<{ recipes: Recipe[] }> {
 
   constructor(
     private store: Store<fromAppRoot.AppState>,
@@ -25,16 +25,16 @@ export class RecipesResolverService implements Resolve<Recipe[]> {
       }),
       switchMap(recipes => {
         if (recipes.length === 0) {
-          this.store.dispatch(new RecipesActions.FetchRecipes());
+          this.store.dispatch(RecipesActions.fetchRecipes());
 
           // take 1 para fazer o unsubscribe. So precisamos 1 vez
           // resolve retorna um observable logo precisamos do actions$ observable
           return this.actions$.pipe(
-            ofType(RecipesActions.SET_RECIPES),
+            ofType(RecipesActions.setRecipes),
             take(1)
           );
         } else {
-          return of(recipes);
+          return of({ recipes });
         }
 
       }))
